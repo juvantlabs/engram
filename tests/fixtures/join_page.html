@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Engram Integration Fixture</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; }
+    .hidden { display: none; }
+    #status { margin-top: 1rem; color: green; }
+  </style>
+  <script>
+    window.joinClicks = 0;
+    function handleJoin() {
+      // Do not mutate the DOM here — the integration test relies on the
+      // preprocessed DOM hash being stable across invocations.
+      window.joinClicks += 1;
+    }
+  </script>
+</head>
+<body>
+  <h1>Join Session</h1>
+  <p>Welcome. Click below to join.</p>
+  <button id="join-btn" aria-label="Join Session" data-testid="join-button" onclick="handleJoin()">
+    Join Session
+  </button>
+  <div class="hidden">secret-hidden-text</div>
+  <div id="status"></div>
+</body>
+</html>

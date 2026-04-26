@@ -22,6 +22,14 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet :: WWW/HTTP :: Browsers",
 ]
+
+[project.urls]
+Homepage = "https://github.com/juvantlabs/engram"
+Repository = "https://github.com/juvantlabs/engram"
+Issues = "https://github.com/juvantlabs/engram/issues"
+Changelog = "https://github.com/juvantlabs/engram/blob/master/CHANGELOG.md"
+Documentation = "https://github.com/juvantlabs/engram#readme"
+Security = "https://github.com/juvantlabs/engram/blob/master/SECURITY.md"
 dependencies = [
     "playwright>=1.44",
     "litellm>=1.50",

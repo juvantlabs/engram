@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# A new push to a branch cancels any earlier run on the same branch — saves
+# CI minutes when commits arrive faster than runs finish.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default; individual jobs can opt in to more if needed.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      # ``fail-fast: false`` keeps all matrix entries running so we can see
+      # whether a failure is Python-version-specific or general.
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      # Playwright browsers are ~150 MB and rarely change — cache them keyed
+      # by the resolved playwright version so we only re-download when the
+      # pinned range bumps.
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: playwright install chromium
+
+      - name: Install Playwright system dependencies
+        run: playwright install-deps chromium
+
+      - name: Lint (ruff)
+        run: ruff check engram tests
+
+      - name: Type-check (mypy --strict)
+        run: mypy engram tests
+
+      - name: Run tests
+        run: pytest tests -v
+
+  # Aggregator job that branch-protection rules can target as a single
+  # required check. Without this, a protection rule has to enumerate every
+  # matrix entry, which breaks when the matrix changes.
+  ci:
+    name: CI
+    needs: check
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm matrix succeeded
+        run: |
+          if [ "${{ needs.check.result }}" != "success" ]; then
+            echo "Matrix job result: ${{ needs.check.result }}"
+            exit 1
+          fi
+          echo "All matrix entries passed."

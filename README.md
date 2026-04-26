@@ -1,5 +1,9 @@
 # Engram
 
+[![CI](https://github.com/juvantlabs/engram/actions/workflows/ci.yml/badge.svg)](https://github.com/juvantlabs/engram/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+
 **Python-native browser automation with cached LLM-resolved selectors.**
 
 Engram lets you write deterministic Playwright flows in Python and delegate

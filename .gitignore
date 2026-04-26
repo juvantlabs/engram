@@ -27,6 +27,11 @@ ENV/
 # Engram
 .engram/
 
+# Local agent instructions — kept out of the public repo to avoid
+# shipping internal architectural notes / agent framing. Each
+# contributor maintains their own copy if they use one.
+CLAUDE.md
+
 # IDE
 .vscode/
 .idea/

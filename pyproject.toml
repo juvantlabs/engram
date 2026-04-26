@@ -22,14 +22,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet :: WWW/HTTP :: Browsers",
 ]
-
-[project.urls]
-Homepage = "https://github.com/juvantlabs/engram"
-Repository = "https://github.com/juvantlabs/engram"
-Issues = "https://github.com/juvantlabs/engram/issues"
-Changelog = "https://github.com/juvantlabs/engram/blob/master/CHANGELOG.md"
-Documentation = "https://github.com/juvantlabs/engram#readme"
-Security = "https://github.com/juvantlabs/engram/blob/master/SECURITY.md"
 dependencies = [
     "playwright>=1.44",
     "litellm>=1.50",
@@ -51,6 +43,17 @@ dev = [
     "types-lxml>=2024.4.14",
     "redis>=5.0",
 ]
+
+# ``[project.urls]`` MUST come after every top-level ``[project]`` key —
+# once the sub-table is opened, any subsequent bare key (``dependencies``,
+# etc.) gets attributed to it, not to ``[project]``.
+[project.urls]
+Homepage = "https://github.com/juvantlabs/engram"
+Repository = "https://github.com/juvantlabs/engram"
+Issues = "https://github.com/juvantlabs/engram/issues"
+Changelog = "https://github.com/juvantlabs/engram/blob/master/CHANGELOG.md"
+Documentation = "https://github.com/juvantlabs/engram#readme"
+Security = "https://github.com/juvantlabs/engram/blob/master/SECURITY.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["engram"]

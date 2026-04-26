@@ -213,6 +213,56 @@ config = EngramConfig(
 
 ---
 
+## Remote browsers (Browserbase, BrowserCat, self-hosted CDP)
+
+Engram doesn't ship vendor-specific browser backends — it doesn't need
+to. `EngramPage` accepts any Playwright `Page`, so any remote Chromium
+that speaks CDP works out of the box via `connect_over_cdp`:
+
+```python
+import asyncio
+from playwright.async_api import async_playwright
+from engram import EngramConfig, EngramPage
+from engram.cache import build_cache
+from engram.llm.litellm_client import LiteLLMClient
+
+async def main() -> None:
+    config = EngramConfig.from_env()
+    cache = build_cache(config)
+    llm = LiteLLMClient(config)
+
+    async with async_playwright() as pw:
+        # Browserbase, BrowserCat, Steel.dev, self-hosted — any CDP URL.
+        remote = await pw.chromium.connect_over_cdp(
+            "wss://connect.browserbase.com?apiKey=YOUR_KEY"
+        )
+        try:
+            context = remote.contexts[0] if remote.contexts else await remote.new_context()
+            page = context.pages[0] if context.pages else await context.new_page()
+
+            engram = EngramPage(page=page, config=config, cache=cache, llm=llm)
+            await engram.goto("https://example.com")
+            await engram.act("click the join button")
+        finally:
+            await remote.close()
+            await cache.close()
+
+asyncio.run(main())
+```
+
+The same code works for Browserbase, BrowserCat, Steel.dev, a
+self-hosted Selenium grid that exposes CDP, or any future CDP-speaking
+provider — Engram doesn't care where the browser lives, as long as it
+produces a Playwright `Page`.
+
+Tradeoff vs. `EngramBrowser`: you own the browser/cache lifecycle
+(close the connection, the context, the cache) yourself. `EngramBrowser`
+is the convenience wrapper for the local-Chromium case; the remote case
+is one level lower-level so you can plug in whichever CDP provider
+makes sense for your deployment.
+
+---
+
 ## Architecture
 
 ```

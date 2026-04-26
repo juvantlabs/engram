@@ -305,6 +305,14 @@ in trusted environments.
 - **There is no plugin system.** Cache backends and LLM clients are
   injected via the constructor. If you need a third backend, write a
   class that satisfies the Protocol and pass it in.
+- **There is no browser-provider abstraction.** Playwright already
+  abstracts CDP-speaking providers via `chromium.connect_over_cdp(url)`,
+  and `EngramPage` accepts any Playwright `Page`. Adding a vendor
+  layer (Browserbase / BrowserCat / Steel.dev / Selenium grid) would
+  duplicate what Playwright does for free, and would tilt Engram from
+  a thin orchestration into a platform-aware library — which is
+  explicitly not the goal. The README has a worked example of this
+  pattern.
 - **There is no automatic retry on transient provider errors.** That's
   LiteLLM's job (`num_retries`, exponential backoff). Engram's
   `max_resolution_retries` only retries on *semantic* failures

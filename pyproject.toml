@@ -6,10 +6,10 @@ build-backend = "hatchling.build"
 name = "engram"
 version = "0.1.0"
 description = "Python-native browser automation with cached LLM-resolved selectors."
-readme = "CLAUDE.md"
+readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Antonio Gatti", email = "antonio@juvant.io" }]
+authors = [{ name = "Juvant", email = "dev@juvant.io" }]
 keywords = ["browser", "automation", "playwright", "llm", "caching"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -32,12 +32,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+redis = [
+    "redis>=5.0",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "mypy>=1.10",
     "ruff>=0.5",
     "types-lxml>=2024.4.14",
+    "redis>=5.0",
 ]
 
 [tool.hatch.build.targets.wheel]

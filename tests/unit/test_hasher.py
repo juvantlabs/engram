@@ -2,37 +2,37 @@
 
 from __future__ import annotations
 
-from engram.dom.hasher import hash_dom, normalize_intent
+from engram.dom.hasher import hash_action, normalize_intent
 
 
 def test_same_inputs_same_hash() -> None:
     dom = "<button>Join</button>"
-    assert hash_dom(dom, "click join") == hash_dom(dom, "click join")
+    assert hash_action(dom, "click join") == hash_action(dom, "click join")
 
 
 def test_intent_is_case_insensitive() -> None:
     dom = "<button>Join</button>"
-    assert hash_dom(dom, "Click Join") == hash_dom(dom, "click join")
+    assert hash_action(dom, "Click Join") == hash_action(dom, "click join")
 
 
 def test_intent_whitespace_collapses() -> None:
     dom = "<button>Join</button>"
-    assert hash_dom(dom, "click   join") == hash_dom(dom, "click join")
-    assert hash_dom(dom, "  click join  ") == hash_dom(dom, "click join")
+    assert hash_action(dom, "click   join") == hash_action(dom, "click join")
+    assert hash_action(dom, "  click join  ") == hash_action(dom, "click join")
 
 
 def test_intent_change_changes_hash() -> None:
     dom = "<button>Join</button>"
-    assert hash_dom(dom, "click join") != hash_dom(dom, "click leave")
+    assert hash_action(dom, "click join") != hash_action(dom, "click leave")
 
 
 def test_dom_change_changes_hash() -> None:
     intent = "click join"
-    assert hash_dom("<button>Join</button>", intent) != hash_dom("<button>Leave</button>", intent)
+    assert hash_action("<button>Join</button>", intent) != hash_action("<button>Leave</button>", intent)
 
 
 def test_returns_hex_sha256_length() -> None:
-    h = hash_dom("<p/>", "hi")
+    h = hash_action("<p/>", "hi")
     assert len(h) == 64
     int(h, 16)  # must be valid hex
 

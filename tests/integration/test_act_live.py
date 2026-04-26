@@ -13,14 +13,16 @@ care about here, not the LLM's own quality.
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Any
 
 import pytest
-from playwright.async_api import async_playwright
+from playwright.async_api import Page, async_playwright
 
 from engram.cache.sqlite import SQLiteCache
 from engram.models.config import EngramConfig
-from engram.models.resolution import SelectorCandidate
+from engram.models.resolution import ObservedAction, SelectorCandidate
 from engram.page import EngramPage
 
 _FIXTURE = Path(__file__).parent.parent / "fixtures" / "join_page.html"
@@ -34,10 +36,29 @@ class CountingFakeLLM:
         self.calls = 0
 
     async def resolve_action(
-        self, intent: str, preprocessed_dom: str
+        self,
+        intent: str,
+        preprocessed_dom: str,
+        *,
+        prior_failures: list[str] | None = None,
     ) -> list[SelectorCandidate]:
         self.calls += 1
         return list(self._candidates)
+
+    async def resolve_extraction(
+        self,
+        intent: str,
+        preprocessed_dom: str,
+        schema: dict[str, Any],
+        *,
+        prior_failures: list[str] | None = None,
+    ) -> dict[str, Any]:
+        raise AssertionError("act() integration test must not invoke extraction")
+
+    async def resolve_observation(
+        self, preprocessed_dom: str
+    ) -> list[ObservedAction]:
+        raise AssertionError("act() integration test must not invoke observation")
 
 
 def _playwright_available() -> bool:
@@ -67,7 +88,9 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture
-async def live_page(tmp_path: Path):  # type: ignore[no-untyped-def]
+async def live_page(
+    tmp_path: Path,
+) -> AsyncIterator[tuple[EngramPage, Page, CountingFakeLLM]]:
     cache = SQLiteCache(tmp_path / "cache.db")
     llm = CountingFakeLLM(
         [
@@ -100,7 +123,9 @@ async def live_page(tmp_path: Path):  # type: ignore[no-untyped-def]
             await cache.close()
 
 
-async def test_first_run_is_cache_miss_and_second_run_is_hit(live_page) -> None:  # type: ignore[no-untyped-def]
+async def test_first_run_is_cache_miss_and_second_run_is_hit(
+    live_page: tuple[EngramPage, Page, CountingFakeLLM],
+) -> None:
     engram_page, raw_page, llm = live_page
 
     # First call: expect one LLM call, and the button's click handler to fire.
@@ -116,7 +141,9 @@ async def test_first_run_is_cache_miss_and_second_run_is_hit(live_page) -> None:
     assert clicks_after_second == 2
 
 
-async def test_dom_mutation_triggers_fresh_resolution(live_page) -> None:  # type: ignore[no-untyped-def]
+async def test_dom_mutation_triggers_fresh_resolution(
+    live_page: tuple[EngramPage, Page, CountingFakeLLM],
+) -> None:
     engram_page, raw_page, llm = live_page
 
     await engram_page.act("click the join session button")

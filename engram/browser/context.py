@@ -13,9 +13,10 @@ from types import TracebackType
 
 from playwright.async_api import Browser, BrowserContext, Playwright, async_playwright
 
+from engram.cache import build_cache
 from engram.cache.base import AbstractCache
-from engram.cache.sqlite import SQLiteCache
 from engram.llm.base import AbstractLLMClient
+from engram.llm.budgeted import BudgetedLLMClient
 from engram.llm.litellm_client import LiteLLMClient
 from engram.models.config import EngramConfig
 from engram.models.errors import EngramBrowserError
@@ -33,8 +34,17 @@ class EngramBrowser:
         llm: AbstractLLMClient | None = None,
     ) -> None:
         self._config = config or EngramConfig()
-        self._cache: AbstractCache = cache or SQLiteCache(self._config.cache_path)
-        self._llm: AbstractLLMClient = llm or LiteLLMClient(self._config)
+        self._cache: AbstractCache = cache or build_cache(self._config)
+        base_llm: AbstractLLMClient = llm or LiteLLMClient(self._config)
+        # When a per-session budget is configured, wrap the LLM client so
+        # every downstream call goes through the counter. We only wrap when
+        # the cap is set so the unwrapped path stays the default for users
+        # who don't need the guardrail.
+        if self._config.max_llm_calls_per_session is not None:
+            base_llm = BudgetedLLMClient(
+                base_llm, self._config.max_llm_calls_per_session
+            )
+        self._llm: AbstractLLMClient = base_llm
         self._owns_cache = cache is None
         self._playwright: Playwright | None = None
         self._browser: Browser | None = None

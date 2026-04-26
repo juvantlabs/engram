@@ -9,7 +9,7 @@ import pytest
 
 from engram.cache.sqlite import SQLiteCache
 from engram.models.errors import EngramCacheError
-from engram.models.resolution import CacheEntry, SelectorCandidate, SelectorResolution
+from engram.models.resolution import ActionResolution, CacheEntry, SelectorCandidate
 
 
 def _make_entry(key: str = "k1") -> CacheEntry:
@@ -21,7 +21,7 @@ def _make_entry(key: str = "k1") -> CacheEntry:
         confidence=0.9,
         reasoning="stable id",
     )
-    resolution = SelectorResolution(
+    resolution = ActionResolution(
         intent="click join",
         dom_hash=key,
         candidates=[candidate],
@@ -51,6 +51,7 @@ async def test_put_then_get_roundtrips(cache_path: Path) -> None:
         got = await cache.get("abc")
         assert got is not None
         assert got.key == "abc"
+        assert isinstance(got.resolution, ActionResolution)
         assert got.resolution.chosen_selector == "#join"
         assert got.resolution.chosen_action == "click"
     finally:
@@ -121,6 +122,44 @@ async def test_creates_parent_directories(tmp_path: Path) -> None:
         assert (await cache.get("k")) is not None
     finally:
         await cache.close()
+
+
+async def test_concurrent_gets_across_instances_do_not_lose_increments(cache_path: Path) -> None:
+    """Two SQLiteCache instances on the same file must not lose hit-count increments.
+
+    The old SELECT-then-UPDATE pattern was vulnerable: A and B both SELECT
+    hit_count=N, both UPDATE to N+1, second write wins, one increment lost.
+    The current UPDATE…RETURNING is one atomic statement so SQLite serialises
+    them and the counter advances exactly N times for N gets.
+    """
+    import asyncio
+
+    seeder = SQLiteCache(cache_path)
+    try:
+        await seeder.put(_make_entry("k"))
+    finally:
+        await seeder.close()
+
+    a = SQLiteCache(cache_path)
+    b = SQLiteCache(cache_path)
+    try:
+        # 50 gets total across two instances. With the old code, lost
+        # increments would surface as a final count below 50.
+        gets = [a.get("k") for _ in range(25)] + [b.get("k") for _ in range(25)]
+        await asyncio.gather(*gets)
+
+        # A fresh read sees the post-flight count.
+        observer = SQLiteCache(cache_path)
+        try:
+            final = await observer.get("k")
+            assert final is not None
+            # +1 for the observer's own get.
+            assert final.hit_count == 51
+        finally:
+            await observer.close()
+    finally:
+        await a.close()
+        await b.close()
 
 
 async def test_corrupted_entry_is_invalidated_and_raises(cache_path: Path, tmp_path: Path) -> None:

@@ -39,6 +39,7 @@ _SEMANTIC_ATTRS: frozenset[str] = frozenset(
         "title",
         "value",
         "for",
+        "autocomplete",
         "disabled",
         "checked",
         "selected",
@@ -63,6 +64,35 @@ _SEMANTIC_ATTRS: frozenset[str] = frozenset(
 
 # Test-hook data-* attributes that are always kept.
 _TEST_DATA_ATTRS: frozenset[str] = frozenset({"data-testid", "data-test", "data-cy", "data-qa"})
+
+# Inputs whose ``value``/``placeholder`` we never want to ship to the LLM.
+_SENSITIVE_INPUT_TYPES: frozenset[str] = frozenset({"password", "hidden"})
+
+# ``autocomplete`` tokens that browsers reserve for credential / payment data.
+# A field tagged with one of these is sensitive even if its ``type`` is plain
+# text — modern login flows often use ``type=text`` + ``autocomplete=username``
+# alongside ``type=password`` + ``autocomplete=current-password``.
+_SENSITIVE_AUTOCOMPLETE_TOKENS: frozenset[str] = frozenset(
+    {
+        "current-password",
+        "new-password",
+        "one-time-code",
+        "cc-number",
+        "cc-csc",
+        "cc-exp",
+        "cc-exp-month",
+        "cc-exp-year",
+    }
+)
+
+# Substring match against ``name``/``id`` for legacy forms that use plain
+# ``type=text`` for credentials. False positives are acceptable here — the
+# downside of stripping a non-sensitive value the user actually wanted is
+# small compared to the downside of leaking a credential to the LLM.
+_SENSITIVE_NAME_RE = re.compile(
+    r"(password|passwd|secret|token|otp|cvv|ssn|api[-_]?key|auth)",
+    re.IGNORECASE,
+)
 
 # Matches inline styles that hide the element.
 _HIDDEN_STYLE_RE = re.compile(
@@ -95,6 +125,7 @@ def preprocess_dom(raw_html: str, max_chars: int = 50_000) -> str:
     _drop_unwanted_tags(root)
     _drop_hidden(root)
     _prune_attributes(root)
+    _scrub_sensitive_inputs(root)
     _normalize_text(root)
 
     serialized = html.tostring(root, encoding="unicode", method="html", pretty_print=False)
@@ -156,6 +187,40 @@ def _prune_attributes(root: etree._Element) -> None:
             if attr in _TEST_DATA_ATTRS:
                 continue
             del el.attrib[attr]
+
+
+def _scrub_sensitive_inputs(root: etree._Element) -> None:
+    """Strip ``value`` and ``placeholder`` from inputs that look sensitive.
+
+    Defends against shipping pre-filled secrets to the LLM. Common attack
+    surface: legacy SSR forms that render ``<input type="text" name="password"
+    value="hunter2">`` would otherwise serialise the password verbatim into
+    every prompt — and into structured logs if the preprocessed DOM is ever
+    captured for debugging.
+    """
+    for el in root.iter():
+        if not isinstance(el.tag, str) or el.tag != "input":
+            continue
+        if not _is_sensitive_input(el):
+            continue
+        el.attrib.pop("value", None)
+        el.attrib.pop("placeholder", None)
+
+
+def _is_sensitive_input(el: etree._Element) -> bool:
+    input_type = (el.get("type") or "text").lower()
+    if input_type in _SENSITIVE_INPUT_TYPES:
+        return True
+    autocomplete = (el.get("autocomplete") or "").lower().strip()
+    # autocomplete is a space-separated token list; check each token.
+    if autocomplete and any(
+        tok in _SENSITIVE_AUTOCOMPLETE_TOKENS for tok in autocomplete.split()
+    ):
+        return True
+    return bool(
+        _SENSITIVE_NAME_RE.search(el.get("name") or "")
+        or _SENSITIVE_NAME_RE.search(el.get("id") or "")
+    )
 
 
 def _normalize_text(root: etree._Element) -> None:

@@ -11,14 +11,15 @@ from engram.models.errors import (
     EngramResolutionError,
 )
 from engram.models.resolution import (
+    ActionResolution,
     ActionType,
     CacheEntry,
     SelectorCandidate,
-    SelectorResolution,
     SelectorType,
 )
 
 __all__ = [
+    "ActionResolution",
     "ActionType",
     "CacheBackend",
     "CacheEntry",
@@ -31,6 +32,5 @@ __all__ = [
     "EngramLLMError",
     "EngramResolutionError",
     "SelectorCandidate",
-    "SelectorResolution",
     "SelectorType",
 ]

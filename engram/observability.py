@@ -8,6 +8,7 @@ events are rendered as human-readable key-value pairs to stderr.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import sys
 from typing import Any
@@ -63,3 +64,22 @@ def configure_logging(level: str = "INFO", *, json_output: bool = True) -> None:
 def get_logger(name: str) -> BoundLogger:
     """Return a structlog logger bound to ``name``."""
     return structlog.get_logger(name)  # type: ignore[no-any-return]
+
+
+def intent_fields(intent: str, *, verbatim: bool) -> dict[str, Any]:
+    """Return log fields for ``intent`` — hashed by default, raw if opted in.
+
+    Intents are user-controlled and often carry PII or credentials (e.g.
+    ``act("fill in my password p4ssw0rd")``). Logging them verbatim by
+    default is a known anti-pattern; logging a short hash preserves
+    correlatability across events for the same intent without leaking
+    the original text.
+
+    :param verbatim: Pass ``EngramConfig.log_intents_verbatim`` here. Set to
+        ``True`` only in trusted environments where you control what gets
+        passed as ``intent`` and need the raw text in logs for debugging.
+    """
+    if verbatim:
+        return {"intent": intent}
+    digest = hashlib.sha256(intent.encode("utf-8")).hexdigest()[:12]
+    return {"intent_hash": digest, "intent_redacted": True}

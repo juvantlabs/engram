@@ -53,28 +53,30 @@ def test_confidence_bounds() -> None:
 def test_config_defaults_are_sensible() -> None:
     c = EngramConfig()
     assert c.cache_backend == "sqlite"
-    assert c.max_llm_retries >= 0
+    assert c.max_resolution_retries >= 0
     assert c.dom_max_chars > 0
 
 
 def test_config_from_env_reads_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENGRAM_LLM_MODEL", "openai/gpt-4o-mini")
     monkeypatch.setenv("ENGRAM_LLM_API_KEY", "sk-test")
-    monkeypatch.setenv("ENGRAM_MAX_LLM_RETRIES", "5")
+    monkeypatch.setenv("ENGRAM_MAX_RESOLUTION_RETRIES", "5")
     monkeypatch.setenv("ENGRAM_CACHE_PATH", "/tmp/engram-test/cache.db")
     monkeypatch.setenv("ENGRAM_HEADLESS", "false")
+    monkeypatch.setenv("ENGRAM_LOG_INTENTS_VERBATIM", "true")
 
     c = EngramConfig.from_env()
     assert c.llm_model == "openai/gpt-4o-mini"
     assert c.llm_api_key is not None
     assert c.llm_api_key.get_secret_value() == "sk-test"
-    assert c.max_llm_retries == 5
+    assert c.max_resolution_retries == 5
     assert c.cache_path == Path("/tmp/engram-test/cache.db")
     assert c.headless is False
+    assert c.log_intents_verbatim is True
 
 
 def test_config_from_env_rejects_bad_int(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ENGRAM_MAX_LLM_RETRIES", "not-a-number")
+    monkeypatch.setenv("ENGRAM_MAX_RESOLUTION_RETRIES", "not-a-number")
     with pytest.raises(EngramConfigError):
         EngramConfig.from_env()
 

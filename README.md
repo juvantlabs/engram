@@ -324,4 +324,7 @@ to be aware of:
 Anything in `engram._*` (private) may change without notice. `mypy --strict`
 + `ruff` + the full pytest suite pass on every commit.
 
+For what we're considering and what we've explicitly decided not to build,
+see [ROADMAP.md](ROADMAP.md).
+
 License: MIT.

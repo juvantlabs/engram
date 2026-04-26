@@ -6,7 +6,10 @@ few project conventions worth knowing.
 
 For the architectural picture (module layout, cache loop, Resolution
 discriminated union, etc.), read [ARCHITECTURE.md](ARCHITECTURE.md). For
-the threat model and residual risks, read [SECURITY.md](SECURITY.md).
+the threat model and residual risks, read [SECURITY.md](SECURITY.md). For
+what we're considering shipping next and what we've already decided not
+to build, read [ROADMAP.md](ROADMAP.md) — checking there before opening a
+big PR can save a lot of work.
 
 ## Local setup
 

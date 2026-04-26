@@ -266,7 +266,7 @@ to be aware of:
 
 ## Status
 
-`v0.1.0` — alpha. Public API surface is the three primitives + `EngramConfig`.
+`v0.2.0` — alpha. Public API surface is the three primitives + `EngramConfig`.
 Anything in `engram._*` (private) may change without notice. `mypy --strict`
 + `ruff` + the full pytest suite pass on every commit.
 

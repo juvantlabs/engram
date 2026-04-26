@@ -43,7 +43,7 @@ from engram.models.resolution import (
 from engram.observability import configure_logging, get_logger
 from engram.page import EngramPage
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "AbstractCache",

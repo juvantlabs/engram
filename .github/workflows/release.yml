@@ -1,0 +1,58 @@
+name: Publish to PyPI
+
+# Publishes on a GitHub Release being marked as "Published" (not on tag-push
+# alone). The Release acts as the human-meaningful trigger — it forces
+# release notes to exist, and lets us stage drafts. Creating the Release
+# also creates the underlying tag, so this single trigger covers both.
+on:
+  release:
+    types: [published]
+
+# Least-privilege default; the publish job opts in to the additional
+# ``id-token: write`` permission needed for trusted publishing.
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build sdist + wheel and publish to PyPI
+    runs-on: ubuntu-latest
+    # PyPI Trusted Publishing pairs the GitHub-issued OIDC token with the
+    # ``pypi`` environment configured under repo Settings → Environments,
+    # so an attacker would need both write access to release.yml AND
+    # control over that environment to publish a malicious build.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/engram-browser
+    permissions:
+      contents: read
+      id-token: write  # required for OIDC-based PyPI Trusted Publishing
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: Verify built artefacts
+        run: |
+          ls -lh dist/
+          python -m pip install --upgrade twine
+          python -m twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No ``with: password: …`` — Trusted Publishing uses the OIDC
+        # token issued by ``id-token: write`` above, paired with the
+        # PyPI-side Pending Publisher / Trusted Publisher configuration.

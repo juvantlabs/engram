@@ -24,7 +24,7 @@ modules. The three primitives on `EngramPage` and the public-facing fields of
   LLM proposes but which match zero elements) are filtered out before the
   result is cached.
 - Redis cache backend (`cache_backend="redis"`) for shared multi-machine
-  setups. Opt-in via the `redis` extra: `pip install 'engram[redis]'`.
+  setups. Opt-in via the `redis` extra: `pip install 'engram-browser[redis]'`.
 - HMAC-SHA256 signing of Redis cache entries via
   `EngramConfig.cache_signing_key`. Tampered or unsigned entries are rejected
   and removed; recommended whenever the Redis instance is reachable from

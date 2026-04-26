@@ -56,15 +56,21 @@ one is formed.
 ## Install
 
 ```bash
-pip install engram
+pip install engram-browser   # import name is unchanged: `import engram`
 playwright install chromium
 ```
 
 For the Redis-backed shared cache (recommended for teams):
 
 ```bash
-pip install 'engram[redis]'
+pip install 'engram-browser[redis]'
 ```
+
+> **Note on the distribution name.** The `engram` name on PyPI is held by
+> an unrelated placeholder package — see the [PEP 541 reclaim
+> request](https://github.com/pypi/support/issues) we've filed. Until
+> that resolves, install via `engram-browser`. The Python import name is
+> always `engram` regardless of the distribution name.
 
 ---
 

@@ -13,7 +13,7 @@ which matters when many workers share the same cache.
 
 The ``redis`` package is an optional dependency::
 
-    pip install 'engram[redis]'
+    pip install 'engram-browser[redis]'
 
 Importing this module does NOT import ``redis`` itself; only :meth:`from_url`
 does. That way users without the extra installed can still import
@@ -147,7 +147,7 @@ class RedisCache:
         except ImportError as exc:
             raise EngramConfigError(
                 "Redis cache backend requires the 'redis' package. "
-                "Install with: pip install 'engram[redis]'"
+                "Install with: pip install 'engram-browser[redis]'"
             ) from exc
         # ``decode_responses=True`` so hgetall returns ``dict[str, str]`` rather
         # than ``dict[bytes, bytes]`` — keeps the protocol clean and avoids

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "engram"
+name = "engram-browser"
 version = "0.2.0"
 description = "Python-native browser automation with cached LLM-resolved selectors."
 readme = "README.md"

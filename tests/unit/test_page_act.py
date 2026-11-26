@@ -111,7 +111,7 @@ class _FakeLLM:
         # list-of-lists scripting one response per call — the latter is what
         # retry tests use to verify the LLM recovers when re-prompted.
         if candidates and isinstance(candidates[0], list):
-            self._scripted: list[list[SelectorCandidate]] = candidates  # type: ignore[assignment]
+            self._scripted: list[list[SelectorCandidate]] = candidates
             self._fixed: list[SelectorCandidate] | None = None
         else:
             self._scripted = []
